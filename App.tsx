@@ -1,8 +1,17 @@
 import "./global.css";
 
-import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const API_BASE_URL = "http://localhost:5000/api/v1";
 
 const quickFilters = ["All", "Bedsitter", "1 Bedroom", "2 Bedroom", "Parking"];
 
@@ -12,7 +21,6 @@ const featuredHomes = [
     title: "Sunset Residency",
     location: "Westlands, Nairobi",
     area: "Westlands",
-    price: 38000,
     priceLabel: "KES 38,000",
     tag: "Popular",
     details: "1 bed • Wi-Fi • Security",
@@ -24,7 +32,6 @@ const featuredHomes = [
     title: "Ivy Heights",
     location: "Kilimani, Nairobi",
     area: "Kilimani",
-    price: 52000,
     priceLabel: "KES 52,000",
     tag: "New",
     details: "2 bed • Parking • Balcony",
@@ -36,7 +43,6 @@ const featuredHomes = [
     title: "Harbor Court",
     location: "South B, Nairobi",
     area: "South B",
-    price: 29500,
     priceLabel: "KES 29,500",
     tag: "Budget",
     details: "Studio • Water included",
@@ -53,20 +59,41 @@ const insights = [
 
 const navItems = ["Home", "Saved", "Bookings", "Profile"];
 
+type SessionUser = {
+  firstName?: string;
+  lastName?: string;
+  email: string;
+};
+
+type AuthResponse = {
+  message?: string;
+  token?: string;
+  data?: {
+    token?: string;
+    user?: SessionUser;
+  };
+};
+
 export default function App() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [activeTab, setActiveTab] = useState("Home");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedHomeId, setSelectedHomeId] = useState(featuredHomes[0].id);
   const [savedHomes, setSavedHomes] = useState<string[]>([]);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
 
   const filteredHomes = useMemo(() => {
     return featuredHomes.filter((home) => {
+      const normalizedSearch = searchTerm.trim().toLowerCase();
       const matchesSearch =
-        searchTerm.trim().length === 0 ||
-        home.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        home.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        home.area.toLowerCase().includes(searchTerm.toLowerCase());
+        normalizedSearch.length === 0 ||
+        home.title.toLowerCase().includes(normalizedSearch) ||
+        home.location.toLowerCase().includes(normalizedSearch) ||
+        home.area.toLowerCase().includes(normalizedSearch);
 
       const matchesFilter =
         activeFilter === "All" ||
@@ -80,6 +107,18 @@ export default function App() {
       return matchesSearch && matchesFilter;
     });
   }, [activeFilter, activeTab, savedHomes, searchTerm]);
+
+  useEffect(() => {
+    if (!filteredHomes.length) {
+      return;
+    }
+
+    const stillVisible = filteredHomes.some((home) => home.id === selectedHomeId);
+
+    if (!stillVisible) {
+      setSelectedHomeId(filteredHomes[0].id);
+    }
+  }, [filteredHomes, selectedHomeId]);
 
   const selectedHome =
     filteredHomes.find((home) => home.id === selectedHomeId) ?? filteredHomes[0];
@@ -100,6 +139,12 @@ export default function App() {
     return insights[0];
   })();
 
+  const userInitials = `${sessionUser?.firstName?.[0] ?? "R"}${sessionUser?.lastName?.[0] ?? "A"}`;
+  const displayName =
+    [sessionUser?.firstName, sessionUser?.lastName].filter(Boolean).join(" ") ||
+    sessionUser?.email ||
+    "Renter";
+
   const toggleSaved = (homeId: string) => {
     setSavedHomes((current) =>
       current.includes(homeId)
@@ -107,6 +152,193 @@ export default function App() {
         : [...current, homeId]
     );
   };
+
+  const handleLogin = async () => {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail || !password.trim()) {
+      setAuthError("Enter both email and password to continue.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setAuthError("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: normalizedEmail,
+          password,
+        }),
+      });
+
+      const payload = (await response.json()) as AuthResponse;
+
+      if (!response.ok) {
+        setAuthError(payload.message || "Login failed. Please try again.");
+        return;
+      }
+
+      setSessionUser(
+        payload.data?.user ?? {
+          email: normalizedEmail,
+        }
+      );
+      setPassword("");
+      setActiveTab("Home");
+    } catch {
+      setAuthError(
+        "We couldn't reach the backend. Update API_BASE_URL in App.tsx if your server is running on another host."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setSessionUser(null);
+    setPassword("");
+    setAuthError("");
+    setActiveTab("Home");
+  };
+
+  if (!sessionUser) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#f7efe3]">
+        <View className="absolute left-[-50] top-8 h-44 w-44 rounded-full bg-[#ea580c]/15" />
+        <View className="absolute right-[-60] top-28 h-72 w-72 rounded-full bg-[#0f766e]/10" />
+
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 36 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="px-5 pb-8 pt-5">
+            <View className="rounded-[34px] bg-[#111827] px-6 py-7">
+              <Text className="text-sm font-semibold uppercase tracking-[2px] text-[#fdba74]">
+                Rental App
+              </Text>
+              <Text className="mt-4 text-4xl font-black leading-[44px] text-white">
+                Sign in and pick your next place with less friction.
+              </Text>
+              <Text className="mt-4 text-sm leading-6 text-slate-300">
+                Track saved rentals, bookings, and tenant updates from one calm
+                dashboard.
+              </Text>
+
+              <View className="mt-6 flex-row flex-wrap justify-between">
+                {[
+                  "Verified listings",
+                  "Tour booking flow",
+                  "Tenant profile tracking",
+                ].map((item) => (
+                  <View
+                    key={item}
+                    className="mb-3 rounded-full bg-white/10 px-4 py-3"
+                  >
+                    <Text className="text-xs font-semibold uppercase tracking-[1.5px] text-white">
+                      {item}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            <View className="mt-6 rounded-[34px] bg-white px-5 py-6">
+              <Text className="text-2xl font-black text-slate-900">Login</Text>
+              <Text className="mt-2 text-sm leading-6 text-slate-500">
+                Use the account registered on your backend at
+                {" "}
+                {API_BASE_URL}
+                .
+              </Text>
+
+              <View className="mt-6 rounded-[26px] bg-[#f8fafc] px-4 py-4">
+                <Text className="text-xs font-semibold uppercase tracking-[2px] text-slate-500">
+                  Email address
+                </Text>
+                <TextInput
+                  value={email}
+                  onChangeText={(value) => {
+                    setEmail(value);
+                    if (authError) {
+                      setAuthError("");
+                    }
+                  }}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  placeholder="you@example.com"
+                  placeholderTextColor="#94a3b8"
+                  className="mt-2 text-base font-medium text-slate-900"
+                />
+              </View>
+
+              <View className="mt-4 rounded-[26px] bg-[#f8fafc] px-4 py-4">
+                <Text className="text-xs font-semibold uppercase tracking-[2px] text-slate-500">
+                  Password
+                </Text>
+                <TextInput
+                  value={password}
+                  onChangeText={(value) => {
+                    setPassword(value);
+                    if (authError) {
+                      setAuthError("");
+                    }
+                  }}
+                  secureTextEntry
+                  placeholder="Enter your password"
+                  placeholderTextColor="#94a3b8"
+                  className="mt-2 text-base font-medium text-slate-900"
+                />
+              </View>
+
+              {authError ? (
+                <View className="mt-4 rounded-2xl bg-[#fff1f2] px-4 py-4">
+                  <Text className="text-sm font-medium leading-6 text-[#be123c]">
+                    {authError}
+                  </Text>
+                </View>
+              ) : null}
+
+              <Pressable
+                onPress={handleLogin}
+                disabled={isSubmitting}
+                className={`mt-6 rounded-[26px] px-5 py-5 ${
+                  isSubmitting ? "bg-[#0f766e]/70" : "bg-[#0f766e]"
+                }`}
+              >
+                <View className="flex-row items-center justify-center">
+                  {isSubmitting ? (
+                    <ActivityIndicator color="#ffffff" />
+                  ) : (
+                    <Text className="text-base font-black uppercase tracking-[2px] text-white">
+                      Sign in
+                    </Text>
+                  )}
+                </View>
+              </Pressable>
+
+              <Text className="mt-4 text-center text-sm leading-6 text-slate-500">
+                If you're testing on a physical phone, replace
+                {" "}
+                `localhost`
+                {" "}
+                with your computer's LAN IP inside
+                {" "}
+                `API_BASE_URL`
+                .
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-[#f4efe7]">
@@ -139,7 +371,7 @@ export default function App() {
               onPress={() => setActiveTab("Profile")}
               className="h-12 w-12 items-center justify-center rounded-2xl bg-[#111827]"
             >
-              <Text className="text-lg font-bold text-white">RA</Text>
+              <Text className="text-lg font-bold text-white">{userInitials}</Text>
             </Pressable>
           </View>
 
@@ -152,25 +384,48 @@ export default function App() {
                 ? `${savedHomes.length} homes saved for later`
                 : activeTab === "Bookings"
                   ? "2 approvals waiting for action"
-                  : "24 new verified listings"}
+                  : activeTab === "Profile"
+                    ? `Welcome back, ${sessionUser.firstName || "renter"}`
+                    : "24 new verified listings"}
             </Text>
             <Text className="mt-2 text-sm leading-6 text-slate-300">
               Search, shortlist, and manage rental options with cleaner pricing,
               faster booking follow-up, and simple landlord discovery.
             </Text>
 
-            <View className="mt-5 rounded-3xl bg-white px-4 py-4">
-              <Text className="text-xs font-semibold uppercase tracking-[2px] text-slate-500">
-                Search location
-              </Text>
-              <TextInput
-                value={searchTerm}
-                onChangeText={setSearchTerm}
-                placeholder="Westlands, Kilimani, South B..."
-                placeholderTextColor="#94a3b8"
-                className="mt-2 text-base font-medium text-slate-900"
-              />
-            </View>
+            {activeTab === "Profile" ? (
+              <View className="mt-5 rounded-3xl bg-white px-4 py-4">
+                <Text className="text-xs font-semibold uppercase tracking-[2px] text-slate-500">
+                  Logged in as
+                </Text>
+                <Text className="mt-2 text-lg font-black text-slate-900">
+                  {displayName}
+                </Text>
+                <Text className="mt-1 text-sm text-slate-500">
+                  {sessionUser.email}
+                </Text>
+
+                <Pressable
+                  onPress={handleLogout}
+                  className="mt-4 self-start rounded-full bg-[#111827] px-4 py-3"
+                >
+                  <Text className="text-sm font-bold text-white">Log out</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View className="mt-5 rounded-3xl bg-white px-4 py-4">
+                <Text className="text-xs font-semibold uppercase tracking-[2px] text-slate-500">
+                  Search location
+                </Text>
+                <TextInput
+                  value={searchTerm}
+                  onChangeText={setSearchTerm}
+                  placeholder="Westlands, Kilimani, South B..."
+                  placeholderTextColor="#94a3b8"
+                  className="mt-2 text-base font-medium text-slate-900"
+                />
+              </View>
+            )}
           </View>
 
           <ScrollView
