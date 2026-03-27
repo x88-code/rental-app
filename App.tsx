@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const API_BASE_URL = "http://localhost:5000/api/v1";
+const API_BASE_URL = "http://192.168.100.3/api/v1";
 
 const quickFilters = ["All", "Bedsitter", "1 Bedroom", "2 Bedroom", "Parking"];
 
