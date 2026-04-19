@@ -12,11 +12,9 @@ const startServer = async () => {
   try {
     await connectDB();
     await ensureDevUser();
-
-
-app.listen(5000, "0.0.0.0", () => {
-  console.log("Server running on port 5000");
-});
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on port ${PORT}`);
+    });
   } catch (error) {
     console.error("Failed to start server:", error.message);
     process.exit(1);

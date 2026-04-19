@@ -50,7 +50,9 @@ const login = asyncHandler(async (req, res) => {
   }
 
   user.lastLoginAt = new Date();
-  await user.save();
+  user
+    .save()
+    .catch((error) => console.error("Failed to update lastLoginAt:", error.message));
 
   return sendTokenResponse(user, 200, res, "Login successful.");
 });

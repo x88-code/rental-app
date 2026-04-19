@@ -7,14 +7,21 @@ const cookieParser = require("cookie-parser");
 
 const authRoutes = require("./routes/authRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
-const notificationRoutes = require("./routes/notificationRoutes");
-const paymentRoutes = require("./routes/paymentRoutes");
 const propertyRoutes = require("./routes/propertyRoutes");
-const reportRoutes = require("./routes/reportRoutes");
 const AppError = require("./utils/AppError");
 const errorHandler = require("./middleware/errorMiddleware");
 
 const app = express();
+
+const sanitizeRequest = (req, res, next) => {
+  ["body", "params", "headers", "query"].forEach((key) => {
+    if (req[key]) {
+      mongoSanitize.sanitize(req[key]);
+    }
+  });
+
+  next();
+};
 
 app.use(
   cors({
@@ -23,9 +30,9 @@ app.use(
   })
 );
 app.use(helmet());
-app.use(mongoSanitize());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(sanitizeRequest);
 app.use(cookieParser());
 
 if (process.env.NODE_ENV !== "production") {
@@ -41,10 +48,7 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/bookings", bookingRoutes);
-app.use("/api/v1/notifications", notificationRoutes);
-app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/properties", propertyRoutes);
-app.use("/api/v1/reports", reportRoutes);
 
 app.use((req, res, next) => {
   next(new AppError(`Route not found: ${req.originalUrl}`, 404));

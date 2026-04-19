@@ -2,7 +2,6 @@ const Booking = require("../models/Booking");
 const Property = require("../models/Property");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
-const { createNotification } = require("../services/notificationService");
 
 const populateBooking = (query) =>
   query
@@ -47,15 +46,6 @@ const createBooking = asyncHandler(async (req, res) => {
     landlord: property.landlord._id,
     requestedMoveInDate: new Date(req.body.requestedMoveInDate),
     notes: req.body.notes?.trim() || "",
-  });
-
-  await createNotification({
-    user: property.landlord._id,
-    type: "booking_created",
-    title: "New booking request",
-    message: `${req.user.fullName} requested to book ${property.title}.`,
-    booking: booking._id,
-    property: property._id,
   });
 
   const populatedBooking = await populateBooking(Booking.findById(booking._id));
@@ -147,15 +137,6 @@ const approveBooking = asyncHandler(async (req, res) => {
   booking.landlordResponseMessage = req.body.message?.trim() || "";
   await booking.save();
 
-  await createNotification({
-    user: booking.tenant,
-    type: "booking_approved",
-    title: "Booking approved",
-    message: `Your booking for ${booking.property.title} has been approved.`,
-    booking: booking._id,
-    property: booking.property._id,
-  });
-
   const populatedBooking = await populateBooking(Booking.findById(booking._id));
 
   res.status(200).json({
@@ -191,15 +172,6 @@ const rejectBooking = asyncHandler(async (req, res) => {
   booking.status = "rejected";
   booking.landlordResponseMessage = req.body.message?.trim() || "";
   await booking.save();
-
-  await createNotification({
-    user: booking.tenant,
-    type: "booking_rejected",
-    title: "Booking rejected",
-    message: `Your booking for ${booking.property.title} was not approved.`,
-    booking: booking._id,
-    property: booking.property._id,
-  });
 
   const populatedBooking = await populateBooking(Booking.findById(booking._id));
 
@@ -250,15 +222,6 @@ const allocateBooking = asyncHandler(async (req, res) => {
   booking.landlordResponseMessage = req.body.message?.trim() || booking.landlordResponseMessage;
   await booking.save();
 
-  await createNotification({
-    user: booking.tenant,
-    type: "booking_allocated",
-    title: "Unit allocated",
-    message: `A unit has been allocated for your booking on ${booking.property.title}.`,
-    booking: booking._id,
-    property: booking.property._id,
-  });
-
   const populatedBooking = await populateBooking(Booking.findById(booking._id));
 
   res.status(200).json({
@@ -306,20 +269,6 @@ const cancelBooking = asyncHandler(async (req, res) => {
   booking.status = "cancelled";
   booking.cancelledAt = new Date();
   await booking.save();
-
-  const recipient =
-    booking.tenant.toString() === req.user.id.toString()
-      ? booking.landlord
-      : booking.tenant;
-
-  await createNotification({
-    user: recipient,
-    type: "booking_cancelled",
-    title: "Booking cancelled",
-    message: `A booking for ${booking.property.title} has been cancelled.`,
-    booking: booking._id,
-    property: booking.property._id,
-  });
 
   const populatedBooking = await populateBooking(Booking.findById(booking._id));
 
