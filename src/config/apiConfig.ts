@@ -6,7 +6,7 @@ export type Environment = "local" | "live";
 export const currentEnvironment: Environment = "live";
 
 // Update this to your Render deployment URL when deploying
-export const RENDER_BASE_URL = "https://your-render-app.onrender.com";
+export const RENDER_BASE_URL = "https://rental-app-2l71.onrender.com";
 
 const API_CONFIG = {
   local: {
