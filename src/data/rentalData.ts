@@ -92,7 +92,7 @@ export const demoAccount: Account = {
   id: "account-demo",
   firstName: "Shadow",
   lastName: "Strike",
-  email: "xgh6695@gmail.com",
+  email: "xgh@gmail.com",
   phone: "0700000000",
   location: "Westlands, Nairobi",
   password: "password123",
