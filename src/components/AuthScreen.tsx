@@ -2,7 +2,6 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type {
-  Account,
   AuthMode,
   LoginForm,
   RegisterForm,
@@ -11,7 +10,7 @@ import type {
 type AuthScreenProps = {
   authError: string;
   authMode: AuthMode;
-  demoAccount: Account;
+  isLoading: boolean;
   loginForm: LoginForm;
   registerForm: RegisterForm;
   onAuthModeChange: (mode: AuthMode) => void;
@@ -26,7 +25,7 @@ const authModes: AuthMode[] = ["login", "register"];
 export function AuthScreen({
   authError,
   authMode,
-  demoAccount,
+  isLoading,
   loginForm,
   registerForm,
   onAuthModeChange,
@@ -116,35 +115,13 @@ export function AuthScreen({
 
                 <Pressable
                   onPress={onLogin}
+                  disabled={isLoading}
                   className="mt-5 rounded-full bg-[#111827] px-4 py-4"
                 >
                   <Text className="text-center text-sm font-bold text-white">
-                    Log in
+                    {isLoading ? "Logging in..." : "Log in"}
                   </Text>
                 </Pressable>
-
-                <View className="mt-5 rounded-[24px] bg-[#ecfeff] px-4 py-4">
-                  <Text className="text-xs font-semibold uppercase tracking-[1.5px] text-[#0f766e]">
-                    Demo account
-                  </Text>
-                  <Text className="mt-2 text-sm text-slate-700">
-                    Email: {demoAccount.email}
-                  </Text>
-                  <Text className="mt-1 text-sm text-slate-700">
-                    Password: {demoAccount.password}
-                  </Text>
-                  <Pressable
-                    onPress={() => {
-                      onLoginFieldChange("email", demoAccount.email);
-                      onLoginFieldChange("password", demoAccount.password);
-                    }}
-                    className="mt-4 self-start rounded-full bg-[#0f766e] px-4 py-3"
-                  >
-                    <Text className="text-xs font-bold uppercase tracking-[1.5px] text-white">
-                      Use demo login
-                    </Text>
-                  </Pressable>
-                </View>
               </>
             ) : (
               <>
@@ -198,10 +175,11 @@ export function AuthScreen({
 
                 <Pressable
                   onPress={onRegister}
+                  disabled={isLoading}
                   className="mt-5 rounded-full bg-[#111827] px-4 py-4"
                 >
                   <Text className="text-center text-sm font-bold text-white">
-                    Create account
+                    {isLoading ? "Creating account..." : "Create account"}
                   </Text>
                 </Pressable>
               </>

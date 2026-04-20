@@ -39,7 +39,7 @@ export type ProfileForm = {
 
 export type Account = ProfileForm & {
   id: string;
-  password: string;
+  // password removed - handled by API auth
 };
 
 export type LoginForm = {

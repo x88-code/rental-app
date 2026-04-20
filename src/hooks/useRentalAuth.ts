@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { demoAccount } from "../data/rentalData";
 import type {
   Account,
   ActiveTab,
@@ -10,12 +9,15 @@ import type {
   RegisterForm,
 } from "../types/rental";
 import {
-  createProfileFromAccount,
+  authApi,
+  transformUser,
+  type ApiUser,
+} from "../services/api";
+import {
   emailPattern,
   emptyLoginForm,
   emptyProfile,
   emptyRegisterForm,
-  validateProfileForm,
 } from "../utils/auth";
 
 type UseRentalAuthArgs = {
@@ -27,19 +29,14 @@ export function useRentalAuth({
   setActionMessage,
   setActiveTab,
 }: UseRentalAuthArgs) {
-  const [accounts, setAccounts] = useState<Account[]>([demoAccount]);
-  const [authenticatedUserId, setAuthenticatedUserId] = useState<string | null>(null);
+  const [authenticatedUser, setAuthenticatedUser] = useState<Account | null>(null);
   const [profile, setProfile] = useState<ProfileForm>(emptyProfile);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [authError, setAuthError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [loginForm, setLoginForm] = useState<LoginForm>(emptyLoginForm);
   const [registerForm, setRegisterForm] = useState<RegisterForm>(emptyRegisterForm);
-
-  const authenticatedUser = useMemo(
-    () => accounts.find((account) => account.id === authenticatedUserId) ?? null,
-    [accounts, authenticatedUserId]
-  );
 
   useEffect(() => {
     if (!authenticatedUser) {
@@ -48,7 +45,13 @@ export function useRentalAuth({
       return;
     }
 
-    setProfile(createProfileFromAccount(authenticatedUser));
+    setProfile({
+      firstName: authenticatedUser.firstName,
+      lastName: authenticatedUser.lastName,
+      email: authenticatedUser.email,
+      phone: authenticatedUser.phone,
+      location: authenticatedUser.location,
+    });
   }, [authenticatedUser]);
 
   const userInitials = `${profile.firstName.trim()[0] ?? "R"}${
@@ -71,7 +74,7 @@ export function useRentalAuth({
     setProfile((current) => ({ ...current, [field]: value }));
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const normalizedEmail = loginForm.email.trim().toLowerCase();
     const normalizedPassword = loginForm.password.trim();
 
@@ -85,40 +88,28 @@ export function useRentalAuth({
       return;
     }
 
-    const matchedAccount = accounts.find(
-      (account) =>
-        account.email.toLowerCase() === normalizedEmail &&
-        account.password === normalizedPassword
-    );
-
-    if (!matchedAccount) {
-      setAuthError("Invalid email or password.");
-      return;
-    }
-
-    setAuthenticatedUserId(matchedAccount.id);
-    setActiveTab("Home");
-    setLoginForm(emptyLoginForm);
+    setIsLoading(true);
     setAuthError("");
-    setActionMessage(
-      `${matchedAccount.firstName} signed in. Home is ready, and profile shows this account.`
-    );
+
+    try {
+      const response = await authApi.login({
+        email: normalizedEmail,
+        password: normalizedPassword,
+      });
+
+      const user = transformUser(response.data.user);
+      setAuthenticatedUser(user);
+      setActiveTab("Home");
+      setLoginForm(emptyLoginForm);
+      setActionMessage(`${user.firstName} signed in. Home is ready.`);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "Login failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleRegister = () => {
-    const validationError = validateProfileForm({
-      firstName: registerForm.firstName,
-      lastName: registerForm.lastName,
-      email: registerForm.email,
-      phone: registerForm.phone,
-      location: registerForm.location,
-    });
-
-    if (validationError) {
-      setAuthError(validationError);
-      return;
-    }
-
+  const handleRegister = async () => {
     if (registerForm.password.trim().length < 8) {
       setAuthError("Password must be at least 8 characters.");
       return;
@@ -129,42 +120,35 @@ export function useRentalAuth({
       return;
     }
 
-    const normalizedEmail = registerForm.email.trim().toLowerCase();
-    const normalizedPhone = registerForm.phone.trim();
-    const duplicateAccount = accounts.find(
-      (account) =>
-        account.email.toLowerCase() === normalizedEmail ||
-        account.phone === normalizedPhone
-    );
-
-    if (duplicateAccount) {
-      setAuthError("An account with this email or phone already exists.");
-      return;
-    }
-
-    const newAccount: Account = {
-      id: `account-${Date.now()}`,
-      firstName: registerForm.firstName.trim(),
-      lastName: registerForm.lastName.trim(),
-      email: normalizedEmail,
-      phone: normalizedPhone,
-      location: registerForm.location.trim(),
-      password: registerForm.password,
-    };
-
-    setAccounts((current) => [...current, newAccount]);
-    setAuthenticatedUserId(newAccount.id);
-    setActiveTab("Home");
-    setAuthMode("login");
+    setIsLoading(true);
     setAuthError("");
-    setRegisterForm(emptyRegisterForm);
-    setActionMessage(
-      `${newAccount.firstName} registered successfully. Home is ready, and profile shows this account.`
-    );
+
+    try {
+      const response = await authApi.register({
+        firstName: registerForm.firstName.trim(),
+        lastName: registerForm.lastName.trim(),
+        email: registerForm.email.trim().toLowerCase(),
+        phone: registerForm.phone.trim(),
+        password: registerForm.password,
+        role: "tenant",
+        location: registerForm.location.trim(),
+      });
+
+      const user = transformUser(response.data.user);
+      setAuthenticatedUser(user);
+      setActiveTab("Home");
+      setAuthMode("login");
+      setRegisterForm(emptyRegisterForm);
+      setActionMessage(`${user.firstName} registered successfully. Welcome!`);
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "Registration failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleProfileEdit = () => {
-    if (!authenticatedUserId) {
+  const handleProfileEdit = async () => {
+    if (!authenticatedUser) {
       return;
     }
 
@@ -174,28 +158,25 @@ export function useRentalAuth({
       return;
     }
 
-    const validationError = validateProfileForm(profile);
+    setIsLoading(true);
 
-    if (validationError) {
-      setActionMessage(validationError);
-      return;
+    try {
+      const response = await authApi.updateProfile({
+        firstName: profile.firstName.trim(),
+        lastName: profile.lastName.trim(),
+        phone: profile.phone.trim(),
+        location: profile.location.trim(),
+      });
+
+      const updatedUser = transformUser(response.data.user);
+      setAuthenticatedUser(updatedUser);
+      setIsEditingProfile(false);
+      setActionMessage("Profile updated successfully.");
+    } catch (error) {
+      setActionMessage(error instanceof Error ? error.message : "Failed to update profile.");
+    } finally {
+      setIsLoading(false);
     }
-
-    const nextProfile = {
-      firstName: profile.firstName.trim(),
-      lastName: profile.lastName.trim(),
-      email: profile.email.trim().toLowerCase(),
-      phone: profile.phone.trim(),
-      location: profile.location.trim(),
-    };
-
-    setAccounts((current) =>
-      current.map((account) =>
-        account.id === authenticatedUserId ? { ...account, ...nextProfile } : account
-      )
-    );
-    setIsEditingProfile(false);
-    setActionMessage("Profile updated for the signed-in account.");
   };
 
   const handleProfileReset = () => {
@@ -203,13 +184,20 @@ export function useRentalAuth({
       return;
     }
 
-    setProfile(createProfileFromAccount(authenticatedUser));
+    setProfile({
+      firstName: authenticatedUser.firstName,
+      lastName: authenticatedUser.lastName,
+      email: authenticatedUser.email,
+      phone: authenticatedUser.phone,
+      location: authenticatedUser.location,
+    });
     setIsEditingProfile(false);
     setActionMessage("Profile changes cleared.");
   };
 
-  const handleLogout = () => {
-    setAuthenticatedUserId(null);
+  const handleLogout = async () => {
+    await authApi.logout();
+    setAuthenticatedUser(null);
     setActiveTab("Home");
     setAuthMode("login");
     setAuthError("");
@@ -224,7 +212,7 @@ export function useRentalAuth({
     authScreenProps: {
       authError,
       authMode,
-      demoAccount,
+      isLoading,
       loginForm,
       registerForm,
       onAuthModeChange: setAuthMode,

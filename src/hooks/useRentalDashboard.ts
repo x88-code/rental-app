@@ -1,23 +1,63 @@
 import { useEffect, useMemo, useState } from "react";
 
-import {
-  bookingItems,
-  featuredHomes,
-  initialActionMessage,
-} from "../data/rentalData";
+import { initialActionMessage } from "../data/rentalData";
 import type { ActiveTab, BookingItem, Home } from "../types/rental";
+import { propertiesApi, bookingsApi, transformProperty, transformBooking } from "../services/api";
 
 export function useRentalDashboard() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [activeTab, setActiveTab] = useState<ActiveTab>("Home");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedHomeId, setSelectedHomeId] = useState(featuredHomes[0].id);
+  const [selectedHomeId, setSelectedHomeId] = useState<string | null>(null);
   const [savedHomes, setSavedHomes] = useState<string[]>([]);
-  const [bookings, setBookings] = useState<BookingItem[]>(bookingItems);
-  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
-    bookingItems[0]?.id ?? null
-  );
+  const [bookings, setBookings] = useState<BookingItem[]>([]);
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState(initialActionMessage);
+  const [properties, setProperties] = useState<Home[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch properties from API
+  useEffect(() => {
+    const fetchProperties = async () => {
+      setIsLoading(true);
+      try {
+        const response = await propertiesApi.list();
+        const homes = response.data.properties.map(transformProperty);
+        setProperties(homes);
+        if (homes.length > 0 && !selectedHomeId) {
+          setSelectedHomeId(homes[0].id);
+        }
+      } catch (error) {
+        setActionMessage("Failed to load properties. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, []);
+
+  // Fetch bookings from API
+  const fetchBookings = async () => {
+    try {
+      const response = await bookingsApi.getMyBookings();
+      const transformedBookings = response.data.bookings.map(transformBooking);
+      setBookings(transformedBookings);
+      if (transformedBookings.length > 0 && !selectedBookingId) {
+        setSelectedBookingId(transformedBookings[0].id);
+      }
+    } catch (error) {
+      setActionMessage("Failed to load bookings.");
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "Bookings" && bookings.length === 0) {
+      fetchBookings();
+    }
+  }, [activeTab]);
+
+  const featuredHomes = properties;
 
   const filteredHomes = useMemo(() => {
     return featuredHomes.filter((home) => {
@@ -155,6 +195,7 @@ export function useRentalDashboard() {
     bookings,
     displayedInsight,
     filteredHomes,
+    isLoading,
     locationSuggestions,
     savedHomes,
     searchTerm,
