@@ -95,7 +95,6 @@ export const demoAccount: Account = {
   email: "xgh@gmail.com",
   phone: "0700000000",
   location: "Westlands, Nairobi",
-  password: "password123",
 };
 
 export const initialActionMessage =
