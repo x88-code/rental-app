@@ -38,13 +38,22 @@ export function BookingList({
   return (
     <>
       {bookings.map((booking) => {
-        const statusTone =
+        const statusBadgeClassName =
           booking.status === "Confirmed"
-            ? "bg-[#dcfce7] text-[#166534]"
+            ? "rounded-full bg-[#dcfce7] px-3 py-2"
             : booking.status === "Pending"
-              ? "bg-[#fef3c7] text-[#92400e]"
-              : "bg-[#e0f2fe] text-[#0f766e]";
+              ? "rounded-full bg-[#fef3c7] px-3 py-2"
+              : "rounded-full bg-[#e0f2fe] px-3 py-2";
+        const statusTextClassName =
+          booking.status === "Confirmed"
+            ? "text-xs font-bold uppercase tracking-[1.5px] text-[#166534]"
+            : booking.status === "Pending"
+              ? "text-xs font-bold uppercase tracking-[1.5px] text-[#92400e]"
+              : "text-xs font-bold uppercase tracking-[1.5px] text-[#0f766e]";
         const isSelected = selectedBookingId === booking.id;
+        const visitCardClassName = isSelected
+          ? "mt-5 rounded-[26px] bg-[#ecfeff] px-4 py-4"
+          : "mt-5 rounded-[26px] bg-[#f8fafc] px-4 py-4";
 
         return (
           <View
@@ -61,9 +70,9 @@ export function BookingList({
 
               <Pressable
                 onPress={() => onBookingFocus(booking)}
-                className={`rounded-full px-3 py-2 ${statusTone}`}
+                className={statusBadgeClassName}
               >
-                <Text className="text-xs font-bold uppercase tracking-[1.5px]">
+                <Text className={statusTextClassName}>
                   {booking.status}
                 </Text>
               </Pressable>
@@ -71,9 +80,7 @@ export function BookingList({
 
             <Pressable
               onPress={() => onBookingOpen(booking)}
-              className={`mt-5 rounded-[26px] px-4 py-4 ${
-                isSelected ? "bg-[#ecfeff]" : "bg-[#f8fafc]"
-              }`}
+              className={visitCardClassName}
             >
               <Text className="text-xs font-semibold uppercase tracking-[1.5px] text-slate-400">
                 Scheduled visit

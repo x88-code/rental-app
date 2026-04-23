@@ -209,22 +209,20 @@ export function DashboardScreen({
             >
               {quickFilters.map((filter) => {
                 const isActive = activeFilter === filter;
+                const filterButtonClassName = isActive
+                  ? "mr-3 rounded-full bg-[#0f766e] px-4 py-3"
+                  : "mr-3 rounded-full bg-white px-4 py-3";
+                const filterTextClassName = isActive
+                  ? "text-sm font-semibold text-white"
+                  : "text-sm font-semibold text-slate-700";
 
                 return (
                   <Pressable
                     key={filter}
                     onPress={() => onFilterChange(filter)}
-                    className={`mr-3 rounded-full px-4 py-3 ${
-                      isActive ? "bg-[#0f766e]" : "bg-white"
-                    }`}
+                    className={filterButtonClassName}
                   >
-                    <Text
-                      className={`text-sm font-semibold ${
-                        isActive ? "text-white" : "text-slate-700"
-                      }`}
-                    >
-                      {filter}
-                    </Text>
+                    <Text className={filterTextClassName}>{filter}</Text>
                   </Pressable>
                 );
               })}

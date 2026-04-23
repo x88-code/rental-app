@@ -1,5 +1,3 @@
-import "./global.css";
-
 import { AuthScreen } from "./src/components/AuthScreen";
 import { DashboardScreen } from "./src/components/DashboardScreen";
 import { useRentalApp } from "./src/hooks/useRentalApp";

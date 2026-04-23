@@ -40,77 +40,81 @@ export function HomeList({
       {filteredHomes.map((home, index) => {
         const isSelected = selectedHomeId === home.id;
         const isSaved = savedHomes.includes(home.id);
+        const cardClassName = isSelected
+          ? "mt-4 rounded-[30px] bg-[#0f766e] px-5 py-5"
+          : "mt-4 rounded-[30px] bg-white px-5 py-5";
+        const titleClassName = isSelected
+          ? "text-2xl font-black text-white"
+          : "text-2xl font-black text-slate-900";
+        const locationClassName = isSelected
+          ? "mt-1 text-sm text-emerald-50/90"
+          : "mt-1 text-sm text-slate-500";
+        const tagButtonClassName = isSelected
+          ? "rounded-full bg-white/15 px-3 py-2"
+          : "rounded-full bg-[#fff7ed] px-3 py-2";
+        const tagTextClassName = isSelected
+          ? "text-xs font-bold uppercase tracking-[1.5px] text-white"
+          : "text-xs font-bold uppercase tracking-[1.5px] text-[#ea580c]";
+        const saveButtonClassName = isSelected
+          ? "mt-3 rounded-full bg-white/15 px-3 py-2"
+          : "mt-3 rounded-full bg-slate-100 px-3 py-2";
+        const saveTextClassName = isSelected
+          ? "text-xs font-bold text-white"
+          : "text-xs font-bold text-slate-700";
+        const previewCardClassName = isSelected
+          ? "mt-5 h-36 rounded-[26px] bg-white/12"
+          : "mt-5 h-36 rounded-[26px] bg-[#f8fafc]";
+        const previewTextClassName = isSelected
+          ? "text-sm font-semibold uppercase tracking-[2px] text-white/70"
+          : "text-sm font-semibold uppercase tracking-[2px] text-slate-400";
+        const rentLabelClassName = isSelected
+          ? "text-xs font-semibold uppercase tracking-[1.5px] text-white/70"
+          : "text-xs font-semibold uppercase tracking-[1.5px] text-slate-400";
+        const rentValueClassName = isSelected
+          ? "mt-1 text-2xl font-black text-white"
+          : "mt-1 text-2xl font-black text-slate-900";
+        const detailsClassName = isSelected
+          ? "mt-1 text-sm text-white/80"
+          : "mt-1 text-sm text-slate-500";
+        const actionButtonClassName = isSelected
+          ? "rounded-full bg-white px-4 py-3"
+          : "rounded-full bg-[#111827] px-4 py-3";
+        const actionTextClassName = isSelected
+          ? "text-sm font-bold text-[#0f766e]"
+          : "text-sm font-bold text-white";
 
         return (
           <Pressable
             key={home.id}
             onPress={() => onHomeSelect(home)}
-            className={`mt-4 rounded-[30px] px-5 py-5 ${
-              isSelected ? "bg-[#0f766e]" : "bg-white"
-            }`}
+            className={cardClassName}
           >
             <View className="flex-row items-start justify-between">
               <View className="flex-1 pr-4">
-                <Text
-                  className={`text-2xl font-black ${
-                    isSelected ? "text-white" : "text-slate-900"
-                  }`}
-                >
-                  {home.title}
-                </Text>
-                <Text
-                  className={`mt-1 text-sm ${
-                    isSelected ? "text-emerald-50/90" : "text-slate-500"
-                  }`}
-                >
-                  {home.location}
-                </Text>
+                <Text className={titleClassName}>{home.title}</Text>
+                <Text className={locationClassName}>{home.location}</Text>
               </View>
 
               <View className="items-end">
                 <Pressable
                   onPress={() => onHomeFilter(home)}
-                  className={`rounded-full px-3 py-2 ${
-                    isSelected ? "bg-white/15" : "bg-[#fff7ed]"
-                  }`}
+                  className={tagButtonClassName}
                 >
-                  <Text
-                    className={`text-xs font-bold uppercase tracking-[1.5px] ${
-                      isSelected ? "text-white" : "text-[#ea580c]"
-                    }`}
-                  >
-                    {home.tag}
-                  </Text>
+                  <Text className={tagTextClassName}>{home.tag}</Text>
                 </Pressable>
 
                 <Pressable
                   onPress={() => onHomeSaveToggle(home, isSaved)}
-                  className={`mt-3 rounded-full px-3 py-2 ${
-                    isSelected ? "bg-white/15" : "bg-slate-100"
-                  }`}
+                  className={saveButtonClassName}
                 >
-                  <Text
-                    className={`text-xs font-bold ${
-                      isSelected ? "text-white" : "text-slate-700"
-                    }`}
-                  >
-                    {isSaved ? "Saved" : "Save"}
-                  </Text>
+                  <Text className={saveTextClassName}>{isSaved ? "Saved" : "Save"}</Text>
                 </Pressable>
               </View>
             </View>
 
-            <View
-              className={`mt-5 h-36 rounded-[26px] ${
-                isSelected ? "bg-white/12" : "bg-[#f8fafc]"
-              }`}
-            >
+            <View className={previewCardClassName}>
               <View className="flex-1 items-center justify-center">
-                <Text
-                  className={`text-sm font-semibold uppercase tracking-[2px] ${
-                    isSelected ? "text-white/70" : "text-slate-400"
-                  }`}
-                >
+                <Text className={previewTextClassName}>
                   {index === 0 ? "Tap card to preview details" : "Ready to view"}
                 </Text>
               </View>
@@ -118,40 +122,16 @@ export function HomeList({
 
             <View className="mt-5 flex-row items-end justify-between">
               <View>
-                <Text
-                  className={`text-xs font-semibold uppercase tracking-[1.5px] ${
-                    isSelected ? "text-white/70" : "text-slate-400"
-                  }`}
-                >
-                  Monthly rent
-                </Text>
-                <Text
-                  className={`mt-1 text-2xl font-black ${
-                    isSelected ? "text-white" : "text-slate-900"
-                  }`}
-                >
-                  {home.priceLabel}
-                </Text>
-                <Text
-                  className={`mt-1 text-sm ${
-                    isSelected ? "text-white/80" : "text-slate-500"
-                  }`}
-                >
-                  {home.details}
-                </Text>
+                <Text className={rentLabelClassName}>Monthly rent</Text>
+                <Text className={rentValueClassName}>{home.priceLabel}</Text>
+                <Text className={detailsClassName}>{home.details}</Text>
               </View>
 
               <Pressable
                 onPress={() => onHomeAction(home)}
-                className={`rounded-full px-4 py-3 ${
-                  isSelected ? "bg-white" : "bg-[#111827]"
-                }`}
+                className={actionButtonClassName}
               >
-                <Text
-                  className={`text-sm font-bold ${
-                    isSelected ? "text-[#0f766e]" : "text-white"
-                  }`}
-                >
+                <Text className={actionTextClassName}>
                   {isSelected ? "Selected" : "View"}
                 </Text>
               </Pressable>

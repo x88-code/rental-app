@@ -14,6 +14,12 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
       <View className="flex-row items-center justify-between">
         {navItems.map((item) => {
           const isActive = activeTab === item;
+          const labelClassName = isActive
+            ? "text-sm font-semibold text-white"
+            : "text-sm font-semibold text-slate-400";
+          const indicatorClassName = isActive
+            ? "mt-2 h-1.5 w-10 rounded-full bg-[#fb923c]"
+            : "mt-2 h-1.5 w-10 rounded-full bg-transparent";
 
           return (
             <Pressable
@@ -21,18 +27,8 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
               onPress={() => onTabChange(item)}
               className="items-center"
             >
-              <Text
-                className={`text-sm font-semibold ${
-                  isActive ? "text-white" : "text-slate-400"
-                }`}
-              >
-                {item}
-              </Text>
-              <View
-                className={`mt-2 h-1.5 w-10 rounded-full ${
-                  isActive ? "bg-[#fb923c]" : "bg-transparent"
-                }`}
-              />
+              <Text className={labelClassName}>{item}</Text>
+              <View className={indicatorClassName} />
             </Pressable>
           );
         })}

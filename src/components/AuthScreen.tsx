@@ -61,20 +61,20 @@ export function AuthScreen({
           <View className="mt-6 flex-row rounded-[28px] bg-white p-2">
             {authModes.map((mode) => {
               const isActive = authMode === mode;
+              const tabButtonClassName = isActive
+                ? "flex-1 rounded-[22px] bg-[#111827] px-4 py-3"
+                : "flex-1 rounded-[22px] bg-transparent px-4 py-3";
+              const tabLabelClassName = isActive
+                ? "text-center text-sm font-bold text-white"
+                : "text-center text-sm font-bold text-slate-600";
 
               return (
                 <Pressable
                   key={mode}
                   onPress={() => onAuthModeChange(mode)}
-                  className={`flex-1 rounded-[22px] px-4 py-3 ${
-                    isActive ? "bg-[#111827]" : "bg-transparent"
-                  }`}
+                  className={tabButtonClassName}
                 >
-                  <Text
-                    className={`text-center text-sm font-bold ${
-                      isActive ? "text-white" : "text-slate-600"
-                    }`}
-                  >
+                  <Text className={tabLabelClassName}>
                     {mode === "login" ? "Login" : "Register"}
                   </Text>
                 </Pressable>
