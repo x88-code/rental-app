@@ -3,6 +3,10 @@
     "name": "Rental App",
     "slug": "rental-app",
     "version": "1.0.0",
+    "platforms": [
+      "android",
+      "ios"
+    ],
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "rentalapp",
@@ -20,6 +24,13 @@
         "projectId": "f591b30f-0778-4b41-91a6-c252b9622555"
       }
     },
-    "owner": "xgh"
+    "owner": "xgh",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f591b30f-0778-4b41-91a6-c252b9622555"
+    },
+    "ios": {}
   }
 }
